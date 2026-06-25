@@ -1,19 +1,12 @@
-﻿# SRL Dependency Edge Isolation Experiments
+# SRL Dependency Edge Isolation
 
-This repository contains the experiment code for the MA thesis project
-**Quantifying the Contribution of Dependency Relation Types to Semantic Role Labeling via Edge Isolation Experiments**.
+Code for the MA thesis project **Quantifying the Contribution of Dependency Relation Types to Semantic Role Labeling via Edge Isolation Experiments**.
 
-The code trains and evaluates a BiLSTM + syntactic GCN semantic role labeling (SRL) model on the English CoNLL-2009 dataset. It supports three experimental settings:
+This repository contains a PyTorch implementation of a BiLSTM + syntactic GCN model for dependency-based semantic role labeling (SRL) on CoNLL-2009 English. The baseline architecture follows the line of work implemented in [`diegma/neural-dep-srl`](https://github.com/diegma/neural-dep-srl), which provides code for *A Simple and Accurate Syntax-Agnostic Neural Model for Dependency-based Semantic Role Labeling* and *Encoding Sentences with Graph Convolutional Networks for Semantic Role Labeling*. The main extension here is an edge-isolation setup for measuring the contribution of different dependency-relation groups.
 
-- **Baseline**: train with the full predicted dependency graph.
-- **Ablation**: train with one dependency-relation group masked out.
-- **Isolation**: train with only one dependency-relation group retained; all other dependency arcs are redirected to self-loops.
+## What to Upload
 
-The main thesis results use the isolation setting, where each relation group's score is compared against a zero-edge self-loop baseline.
-
-## Minimal Files to Upload
-
-For GitHub review or thesis replication, the minimal code artifact is:
+For thesis-code review, the minimal repository is:
 
 ```text
 README.md
@@ -23,13 +16,11 @@ train.py
 evaluate.py
 ```
 
-These files are sufficient to inspect the model, data processing, training setup, and evaluation logic.
+The original `.slurm` and `.sh` files were used for ALICE HPC job submission and are not needed for inspecting or reproducing the Python experiment logic. They should only be uploaded after removing cluster-specific paths, email addresses, and environment settings.
 
-The original directory also contains `.slurm` and `.sh` files used to submit jobs on the ALICE HPC cluster. Those scripts are not required for understanding or reproducing the Python experiment logic, and they may contain cluster-specific paths, email addresses, module names, or virtual-environment locations. They should only be uploaded after being converted into generic templates.
+## Data Layout
 
-## Expected Data Layout
-
-By default, the scripts expect the following local layout:
+The scripts expect this layout by default:
 
 ```text
 data/
@@ -39,11 +30,9 @@ data/
   glove.2024.wikigiga.100d.txt
 ```
 
-The CoNLL-2009 data and GloVe vectors are not included in this repository. If your files are stored elsewhere, pass explicit paths with `--train_file`, `--dev_file`, and `--glove_file`.
+The CoNLL-2009 data and GloVe vectors are not included. Use `--train_file`, `--dev_file`, and `--glove_file` if your files are elsewhere.
 
-## Installation
-
-Create an environment and install the required packages:
+## Setup
 
 ```bash
 python -m venv .venv
@@ -51,7 +40,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-On Windows PowerShell, activate the environment with:
+On Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -60,49 +49,28 @@ pip install -r requirements.txt
 
 A CUDA-enabled PyTorch installation is recommended for full training runs.
 
-## Dependency Relation Groups
+## Experiments
 
-The experiments use seven functionally defined dependency-relation groups:
+The code supports three settings:
 
-| Group | Labels |
-| --- | --- |
-| `core_args` | `SBJ`, `OBJ`, `OPRD`, `PRD`, `PUT`, `DTV`, `LGS` |
-| `clausal` | `VC`, `SUB`, `EXTR`, `IM` |
-| `adjuncts` | `ADV`, `TMP`, `LOC`, `DIR`, `MNR`, `EXT`, `BNF`, `PRP`, `PRD-PRP`, `PRD-TMP`, `LOC-OPRD`, `LOC-PRD`, `MNR-TMP` |
-| `noun_internal` | `NMOD`, `AMOD`, `APPO`, `HMOD`, `NAME`, `TITLE`, `POSTHON`, `SUFFIX`, `PMOD` |
-| `coordination` | `COORD`, `CONJ` |
-| `functional` | `DEP`, `P`, `HYPH`, `PRT`, `PRN`, `ADV-GAP`, `VOC` |
-| `gap` | `GAP-SBJ`, `GAP-OBJ`, `GAP-LOC`, `GAP-TMP`, `GAP-NMOD`, `GAP-OPRD`, `GAP-PMOD`, `GAP-PRD`, `GAP-VC`, `GAP-LGS`, `DEP-GAP`, `DIR-GAP`, `EXT-GAP` |
+- `baseline`: full predicted dependency graph.
+- `ablation`: one dependency-relation group masked out.
+- `isolation`: only one dependency-relation group retained; all other arcs are redirected to self-loops.
 
-The special `no_edge` condition is used only for isolation experiments. It replaces all dependency arcs with self-loops and serves as the zero-edge reference model.
+The main thesis results use isolation models compared against the `no_edge` zero-edge baseline.
+
+Dependency groups: `core_args`, `clausal`, `adjuncts`, `noun_internal`, `coordination`, `functional`, `gap`. The special group `no_edge` is only valid for isolation.
 
 ## Training
 
-Train the full-graph baseline:
-
 ```bash
 python train.py --mode baseline
-```
-
-Train an ablation model, for example with core argument relations masked out:
-
-```bash
+python train.py --mode isolation --group no_edge
+python train.py --mode isolation --group core_args
 python train.py --mode ablation --group core_args
 ```
 
-Train the zero-edge isolation baseline:
-
-```bash
-python train.py --mode isolation --group no_edge
-```
-
-Train an isolation model, for example retaining only core argument relations:
-
-```bash
-python train.py --mode isolation --group core_args
-```
-
-Useful options:
+Common options:
 
 ```bash
 python train.py \
@@ -115,25 +83,12 @@ python train.py \
   --batch_size 64
 ```
 
-Checkpoints are written to:
-
-```text
-checkpoints/
-checkpoints_ablation/
-checkpoints_isolation/
-```
+Checkpoints are written to `checkpoints/`, `checkpoints_ablation/`, or `checkpoints_isolation/`.
 
 ## Evaluation
 
-Evaluate one ablation model against the full-graph baseline:
-
 ```bash
 python evaluate.py --mode ablation --group core_args
-```
-
-Evaluate one isolation model against the zero-edge baseline:
-
-```bash
 python evaluate.py --mode isolation --group core_args
 ```
 
@@ -144,17 +99,11 @@ python evaluate.py --mode ablation --group all
 python evaluate.py --mode isolation --group all
 ```
 
-Outputs are written to `results_ablation/` or `results_isolation/`. The evaluation script produces:
+Outputs are written to `results_ablation/` or `results_isolation/` and include group-level F1 summaries, per-role delta F1 tables, sentence-level CSV files, MDD/MNDRD scatter plots, and summary figures.
 
-- overall F1 summaries by dependency group,
-- per-role delta F1 tables,
-- sentence-level CSV files with F1, MDD, MNDRD, and delta F1,
-- MDD/MNDRD scatter plots,
-- summary bar plots and role heatmaps.
+## Isolation Workflow
 
-## Reproducing the Main Isolation Workflow
-
-A minimal sequential reproduction of the isolation experiments is:
+A sequential version of the main isolation workflow is:
 
 ```bash
 python train.py --mode isolation --group no_edge
@@ -167,11 +116,8 @@ done
 python evaluate.py --mode isolation --group all
 ```
 
-The original experiments were run as separate HPC jobs, but the Python commands above express the same dependency structure.
-
 ## Notes
 
-- The scripts use predicted dependency parses from the CoNLL-2009 English data.
-- Non-retained dependency arcs are redirected to self-loops rather than removed from the tensor representation.
-- The zero-edge baseline still passes through the GCN self-loop transformation, but contains no cross-token dependency message passing.
-- Random seeds are set through `--seed`, but exact results may still vary slightly across hardware and PyTorch/CUDA versions.
+- Non-retained dependency arcs are redirected to self-loops rather than removed.
+- The zero-edge model has no cross-token dependency message passing, but still uses the GCN self-loop transformation.
+- Exact scores may vary slightly across hardware and PyTorch/CUDA versions.
