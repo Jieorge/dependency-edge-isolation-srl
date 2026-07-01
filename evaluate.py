@@ -379,7 +379,8 @@ def main():
     existing = [r for r in existing if r['group'] != group]
     existing.append({
         'group': group, 'description': DEPREL_GROUPS[group],
-        'f1_baseline': f1_base, f'f1_{args.mode}': f1_exp, 'delta_f1': delta,
+        'reference': ref_label, 'f1_reference': f1_base,
+        f'f1_{args.mode}': f1_exp, 'delta_f1': delta,
     })
     with open(summary_path, 'w') as f:
         json.dump(existing, f, indent=2)

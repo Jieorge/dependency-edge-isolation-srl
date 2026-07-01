@@ -4,9 +4,9 @@ Code for the MA thesis project **Quantifying the Contribution of Dependency Rela
 
 This repository contains a PyTorch implementation of a BiLSTM + syntactic GCN model for dependency-based semantic role labeling (SRL) on CoNLL-2009 English. The baseline architecture follows the line of work implemented in [`diegma/neural-dep-srl`](https://github.com/diegma/neural-dep-srl), which provides code for *A Simple and Accurate Syntax-Agnostic Neural Model for Dependency-based Semantic Role Labeling* and *Encoding Sentences with Graph Convolutional Networks for Semantic Role Labeling*. The main extension here is an edge-isolation setup for measuring the contribution of different dependency-relation groups.
 
-## What to Upload
+## Repository Scope
 
-For thesis-code review, the minimal repository is:
+For thesis-code review, this repository keeps only the files needed to inspect and reproduce the Python experiment logic:
 
 ```text
 README.md
@@ -16,7 +16,7 @@ train.py
 evaluate.py
 ```
 
-The original `.slurm` and `.sh` files were used for ALICE HPC job submission and are not needed for inspecting or reproducing the Python experiment logic. They should only be uploaded after removing cluster-specific paths, email addresses, and environment settings.
+Cluster submission scripts are not included because they contain environment-specific ALICE HPC settings rather than experiment logic.
 
 ## Data Layout
 
@@ -106,6 +106,7 @@ Outputs are written to `results_ablation/` or `results_isolation/` and include g
 A sequential version of the main isolation workflow is:
 
 ```bash
+python train.py --mode baseline
 python train.py --mode isolation --group no_edge
 
 for group in core_args clausal adjuncts noun_internal coordination functional gap; do
